@@ -1,0 +1,48 @@
+# This workflow will build a Java project with Maven, and cache/restore any dependencies to improve the workflow execution time
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-maven
+
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+
+name: Setup Accumulo
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/download-artifact@v3
+      with:
+        name: geomesa-sql-dist-package
+        path: ./
+    - name: Unpack the package
+      run: tar xzvf geomesa-sql-dist_*.tar.gz
+    - name: Setup GeoMesa Accumulo environment
+      run: 
+
+
+  smoke-accumulo:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up JDK 11
+      uses: actions/setup-java@v3
+      with:
+        java-version: 11
+        distribution: 'temurin'
+    - name: Checkout fluo-uno
+      uses: actions/checkout@v3
+      with:
+        repository: bxkftechteam/fluo-uno
+        path: ./fluo-uno
+    - run: ./fluo-uno/bin/uno fetch accumulo
+    - run: ./fluo-uno/bin/uno setup accumulo
