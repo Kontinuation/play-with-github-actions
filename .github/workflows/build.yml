@@ -37,6 +37,6 @@ jobs:
         ref: accumulo_2.1.0
         path: ./fluo-uno
     - run: ./fluo-uno/bin/uno fetch accumulo
-    - name: Setup tmate session
-      uses: mxschmitt/action-tmate@v3
+    # - name: Setup tmate session
+    #   uses: mxschmitt/action-tmate@v3
     - run: ./fluo-uno/bin/uno setup accumulo
