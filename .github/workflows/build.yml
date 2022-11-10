@@ -30,4 +30,6 @@ jobs:
         repository: bxkftechteam/fluo-uno
         path: ./fluo-uno
     - run: ./fluo-uno/bin/uno fetch accumulo
+    - name: Setup tmate session
+      uses: mxschmitt/action-tmate@v3
     - run: ./fluo-uno/bin/uno setup accumulo
