@@ -6,7 +6,7 @@
 # separate terms of service, privacy policy, and support
 # documentation.
 
-name: Setup Accumulo
+name: Smoke tests
 
 on:
   push:
@@ -17,6 +17,7 @@ on:
 jobs:
   smoke-accumulo:
     runs-on: ubuntu-latest
+    needs: build
     steps:
     - name: Allow password-less ssh to localhost
       run: |
@@ -25,11 +26,17 @@ jobs:
         fi
         cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
     - uses: actions/checkout@v3
+      with:
+        repository: bxkftechteam/geomesa-sql # TODO: remove this config
     - name: Set up JDK 11
       uses: actions/setup-java@v3
       with:
         java-version: 11
         distribution: 'temurin'
+    # TODO: replace this with actions/download-artifact@v3
+    - run: wget https://public-assets-good-drivers-club.oss-cn-beijing.aliyuncs.com/geomesa-sql-dist_2.12-0.1.0-SNAPSHOT-bin.tar.gz
+    - name: Unpack the package
+      run: mkdir -p geomesa-sql-dist && tar xf geomesa-sql-dist_2.12-*-bin.tar.gz --strip-components=1 -C geomesa-sql-dist
     - name: Checkout fluo-uno
       uses: actions/checkout@v3
       with:
@@ -37,6 +44,20 @@ jobs:
         ref: accumulo_2.1.0
         path: ./fluo-uno
     - run: ./fluo-uno/bin/uno fetch accumulo
+    - run: ./fluo-uno/bin/uno setup accumulo
+    - run: wget https://github.com/locationtech/geomesa/releases/download/geomesa-3.4.1/geomesa-accumulo_2.12-3.4.1-bin.tar.gz
+    - run: tar xf geomesa-accumulo_2.12-3.4.1-bin.tar.gz
     # - name: Setup tmate session
     #   uses: mxschmitt/action-tmate@v3
-    - run: ./fluo-uno/bin/uno setup accumulo
+    - run: |
+        export HADOOP_HOME=$(pwd)/fluo-uno/install/hadoop-3.3.4
+        export ACCUMULO_HOME=$(pwd)/fluo-uno/install/accumulo-2.1.0
+        export ZOOKEEPER_HOME=$(pwd)/fluo-uno/install/apache-zookeeper-3.8.0-bin
+        export GEOMESA_HOME=$(pwd)/geomesa-accumulo_2.12-3.4.1
+        export PATH=$HADOOP_HOME/bin:$ACCUMULO_HOME/bin:$GEOMESA_HOME/bin:$PATH
+        yes | geomesa-accumulo
+        setup-namespace.sh -u root -p secret -n geomesa
+        geomesa-accumulo ingest -c geomesa.test -f beijing_subway build/smoke_test/beijing_subway.geojson --force
+        geomesa-accumulo ingest -c geomesa.test -f beijing_subway_station build/smoke_test/beijing_subway_station.geojson --force
+        ./geomesa-sql-dist/bin/geomesa-sqlline -c geomesa.test -f build/smoke_test/queries.sql
+
