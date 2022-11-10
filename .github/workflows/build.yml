@@ -15,21 +15,6 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build:
-
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/download-artifact@v3
-      with:
-        name: geomesa-sql-dist-package
-        path: ./
-    - name: Unpack the package
-      run: tar xzvf geomesa-sql-dist_*.tar.gz
-    - name: Setup GeoMesa Accumulo environment
-      run: 
-
-
   smoke-accumulo:
     runs-on: ubuntu-latest
     steps:
