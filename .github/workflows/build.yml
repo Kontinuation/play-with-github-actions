@@ -67,6 +67,10 @@ jobs:
 
   smoke-hbase:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        scala: [2.12, 2.11]
+        geomesa: [3.4.1]
     needs: build
     steps:
     - name: Allow password-less ssh to localhost
@@ -84,25 +88,25 @@ jobs:
         java-version: 8
         distribution: 'temurin'
     # TODO: replace this with actions/download-artifact@v3
-    - run: wget https://public-assets-good-drivers-club.oss-cn-beijing.aliyuncs.com/geomesa-sql-dist_2.12-0.1.0-SNAPSHOT-bin.tar.gz
+    - run: wget https://public-assets-good-drivers-club.oss-cn-beijing.aliyuncs.com/geomesa-sql-dist_${{scala}}-0.1.0-SNAPSHOT-bin.tar.gz
     - name: Unpack the package
-      run: mkdir -p geomesa-sql-dist && tar xf geomesa-sql-dist_2.12-*-bin.tar.gz --strip-components=1 -C geomesa-sql-dist
+      run: mkdir -p geomesa-sql-dist && tar xf geomesa-sql-dist_${{scala}}-*-bin.tar.gz --strip-components=1 -C geomesa-sql-dist
     - name: Download hbase
       run: wget "https://dlcdn.apache.org/hbase/2.5.1/hbase-2.5.1-bin.tar.gz" && tar xf hbase-2.5.1-bin.tar.gz
-    - run: wget https://github.com/locationtech/geomesa/releases/download/geomesa-3.4.1/geomesa-hbase_2.12-3.4.1-bin.tar.gz
-    - run: tar xf geomesa-hbase_2.12-3.4.1-bin.tar.gz
+    - run: wget https://github.com/locationtech/geomesa/releases/download/geomesa-${{geomesa}}/geomesa-hbase_${{scala}}-${{geomesa}}-bin.tar.gz
+    - run: tar xf geomesa-hbase_${{scala}}-${{geomesa}}-bin.tar.gz
     # - name: Setup tmate session
     #   uses: mxschmitt/action-tmate@v3
     - name: Setup HBase and GeoMesa coprocessor
       run: |
-        cp -v geomesa-hbase_2.12-3.4.1/dist/hbase/geomesa-hbase-distributed-runtime-hbase2_2.12-3.4.1.jar hbase-2.5.1/lib/
+        cp -v geomesa-hbase_${{scala}}-${{geomesa}}/dist/hbase/geomesa-hbase-distributed-runtime-hbase2_${{scala}}-${{geomesa}}.jar hbase-2.5.1/lib/
         ./hbase-2.5.1/bin/start-hbase.sh
         while ! ./hbase-2.5.1/bin/hbase hbck ; do
           sleep 1
         done        
     - run: |
         export HBASE_HOME=$(pwd)/hbase-2.5.1
-        export GEOMESA_HOME=$(pwd)/geomesa-hbase_2.12-3.4.1
+        export GEOMESA_HOME=$(pwd)/geomesa-hbase_${{scala}}-${{geomesa}}
         export PATH=$HBASE_HOME/bin:$GEOMESA_HOME/bin:$PATH
         yes | geomesa-hbase
         geomesa-hbase ingest -c geomesa:test -f beijing_subway build/smoke_test/beijing_subway.geojson --force
