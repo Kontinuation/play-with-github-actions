@@ -88,25 +88,25 @@ jobs:
         java-version: 8
         distribution: 'temurin'
     # TODO: replace this with actions/download-artifact@v3
-    - run: wget https://public-assets-good-drivers-club.oss-cn-beijing.aliyuncs.com/geomesa-sql-dist_${{scala}}-0.1.0-SNAPSHOT-bin.tar.gz
+    - run: wget https://public-assets-good-drivers-club.oss-cn-beijing.aliyuncs.com/geomesa-sql-dist_${{matrix.scala}}-0.1.0-SNAPSHOT-bin.tar.gz
     - name: Unpack the package
-      run: mkdir -p geomesa-sql-dist && tar xf geomesa-sql-dist_${{scala}}-*-bin.tar.gz --strip-components=1 -C geomesa-sql-dist
+      run: mkdir -p geomesa-sql-dist && tar xf geomesa-sql-dist_${{matrix.scala}}-*-bin.tar.gz --strip-components=1 -C geomesa-sql-dist
     - name: Download hbase
       run: wget "https://dlcdn.apache.org/hbase/2.5.1/hbase-2.5.1-bin.tar.gz" && tar xf hbase-2.5.1-bin.tar.gz
-    - run: wget https://github.com/locationtech/geomesa/releases/download/geomesa-${{geomesa}}/geomesa-hbase_${{scala}}-${{geomesa}}-bin.tar.gz
-    - run: tar xf geomesa-hbase_${{scala}}-${{geomesa}}-bin.tar.gz
+    - run: wget https://github.com/locationtech/geomesa/releases/download/geomesa-${{matrix.geomesa}}/geomesa-hbase_${{matrix.scala}}-${{matrix.geomesa}}-bin.tar.gz
+    - run: tar xf geomesa-hbase_${{matrix.scala}}-${{matrix.geomesa}}-bin.tar.gz
     # - name: Setup tmate session
     #   uses: mxschmitt/action-tmate@v3
     - name: Setup HBase and GeoMesa coprocessor
       run: |
-        cp -v geomesa-hbase_${{scala}}-${{geomesa}}/dist/hbase/geomesa-hbase-distributed-runtime-hbase2_${{scala}}-${{geomesa}}.jar hbase-2.5.1/lib/
+        cp -v geomesa-hbase_${{matrix.scala}}-${{matrix.geomesa}}/dist/hbase/geomesa-hbase-distributed-runtime-hbase2_${{matrix.scala}}-${{matrix.geomesa}}.jar hbase-2.5.1/lib/
         ./hbase-2.5.1/bin/start-hbase.sh
         while ! ./hbase-2.5.1/bin/hbase hbck ; do
           sleep 1
         done        
     - run: |
         export HBASE_HOME=$(pwd)/hbase-2.5.1
-        export GEOMESA_HOME=$(pwd)/geomesa-hbase_${{scala}}-${{geomesa}}
+        export GEOMESA_HOME=$(pwd)/geomesa-hbase_${{matrix.scala}}-${{matrix.geomesa}}
         export PATH=$HBASE_HOME/bin:$GEOMESA_HOME/bin:$PATH
         yes | geomesa-hbase
         geomesa-hbase ingest -c geomesa:test -f beijing_subway build/smoke_test/beijing_subway.geojson --force
