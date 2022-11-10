@@ -53,8 +53,6 @@ jobs:
     - run: ./fluo-uno/bin/uno setup accumulo
     - run: wget https://github.com/locationtech/geomesa/releases/download/geomesa-3.4.1/geomesa-accumulo_2.12-3.4.1-bin.tar.gz
     - run: tar xf geomesa-accumulo_2.12-3.4.1-bin.tar.gz
-    # - name: Setup tmate session
-    #   uses: mxschmitt/action-tmate@v3
     - run: |
         export HADOOP_HOME=$(pwd)/fluo-uno/install/hadoop-3.3.4
         export ACCUMULO_HOME=$(pwd)/fluo-uno/install/accumulo-2.1.0
@@ -93,6 +91,8 @@ jobs:
       run: wget "https://dlcdn.apache.org/hbase/2.5.1/hbase-2.5.1-bin.tar.gz" && tar xf hbase-2.5.1-bin.tar.gz
     - run: wget https://github.com/locationtech/geomesa/releases/download/geomesa-3.4.1/geomesa-hbase_2.12-3.4.1-bin.tar.gz
     - run: tar xf geomesa-hbase_2.12-3.4.1-bin.tar.gz
+    - name: Setup tmate session
+      uses: mxschmitt/action-tmate@v3
     - name: Setup HBase and GeoMesa coprocessor
       run: |
         cp -v geomesa-hbase_2.12-3.4.1/dist/hbase/geomesa-hbase-distributed-runtime-hbase2_2.12-3.4.1.jar hbase-2.5.1/lib/
