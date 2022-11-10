@@ -115,6 +115,10 @@ jobs:
 
   smoke-redis:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        scala: [2.12, 2.11]
+        geomesa: [3.4.1]
     needs: build
     services:
       redis:
@@ -131,13 +135,13 @@ jobs:
         java-version: 8
         distribution: 'temurin'
     # TODO: replace this with actions/download-artifact@v3
-    - run: wget https://public-assets-good-drivers-club.oss-cn-beijing.aliyuncs.com/geomesa-sql-dist_2.12-0.1.0-SNAPSHOT-bin.tar.gz
+    - run: wget https://public-assets-good-drivers-club.oss-cn-beijing.aliyuncs.com/geomesa-sql-dist_${{matrix.scala}}-0.1.0-SNAPSHOT-bin.tar.gz
     - name: Unpack the package
-      run: mkdir -p geomesa-sql-dist && tar xf geomesa-sql-dist_2.12-*-bin.tar.gz --strip-components=1 -C geomesa-sql-dist
-    - run: wget https://github.com/locationtech/geomesa/releases/download/geomesa-3.4.1/geomesa-redis_2.12-3.4.1-bin.tar.gz
-    - run: tar xf geomesa-redis_2.12-3.4.1-bin.tar.gz
+      run: mkdir -p geomesa-sql-dist && tar xf geomesa-sql-dist_${{matrix.scala}}-*-bin.tar.gz --strip-components=1 -C geomesa-sql-dist
+    - run: wget https://github.com/locationtech/geomesa/releases/download/geomesa-3.4.1/geomesa-redis_${{matrix.scala}}-${{matrix.geomesa}}-bin.tar.gz
+    - run: tar xf geomesa-redis_${{matrix.scala}}-${{matrix.geomesa}}-bin.tar.gz
     - run: |
-        export GEOMESA_HOME=$(pwd)/geomesa-redis_2.12-3.4.1
+        export GEOMESA_HOME=$(pwd)/geomesa-redis_${{matrix.scala}}-${{matrix.geomesa}}
         export PATH=$GEOMESA_HOME/bin:$PATH
         yes | geomesa-redis
         geomesa-redis ingest -u localhost:6379 -c geomesa:test -f beijing_subway build/smoke_test/beijing_subway.geojson --force
@@ -146,6 +150,10 @@ jobs:
 
   smoke-fs:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        scala: [2.12, 2.11]
+        geomesa: [3.4.1]
     needs: build
     steps:
     - uses: actions/checkout@v3
@@ -157,13 +165,13 @@ jobs:
         java-version: 8
         distribution: 'temurin'
     # TODO: replace this with actions/download-artifact@v3
-    - run: wget https://public-assets-good-drivers-club.oss-cn-beijing.aliyuncs.com/geomesa-sql-dist_2.12-0.1.0-SNAPSHOT-bin.tar.gz
+    - run: wget https://public-assets-good-drivers-club.oss-cn-beijing.aliyuncs.com/geomesa-sql-dist_${{matrix.scala}}-0.1.0-SNAPSHOT-bin.tar.gz
     - name: Unpack the package
-      run: mkdir -p geomesa-sql-dist && tar xf geomesa-sql-dist_2.12-*-bin.tar.gz --strip-components=1 -C geomesa-sql-dist
-    - run: wget https://github.com/locationtech/geomesa/releases/download/geomesa-3.4.1/geomesa-fs_2.12-3.4.1-bin.tar.gz
-    - run: tar xf geomesa-fs_2.12-3.4.1-bin.tar.gz
+      run: mkdir -p geomesa-sql-dist && tar xf geomesa-sql-dist_${{matrix.scala}}-*-bin.tar.gz --strip-components=1 -C geomesa-sql-dist
+    - run: wget https://github.com/locationtech/geomesa/releases/download/geomesa-3.4.1/geomesa-fs_${{matrix.scala}}-${{matrix.geomesa}}-bin.tar.gz
+    - run: tar xf geomesa-fs_${{matrix.scala}}-${{matrix.geomesa}}-bin.tar.gz
     - run: |
-        export GEOMESA_HOME=$(pwd)/geomesa-fs_2.12-3.4.1
+        export GEOMESA_HOME=$(pwd)/geomesa-fs_${{matrix.scala}}-${{matrix.geomesa}}
         export PATH=$GEOMESA_HOME/bin:$PATH
         yes | geomesa-fs
         geomesa-fs ingest -p ./fs_store -e parquet --partition-scheme xz2-2bits -f beijing_subway build/smoke_test/beijing_subway.geojson --force
@@ -172,6 +180,10 @@ jobs:
 
   smoke-cassandra:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        scala: [2.12, 2.11]
+        geomesa: [3.4.1]
     needs: build
     steps:
     - uses: actions/checkout@v3
@@ -183,11 +195,11 @@ jobs:
         java-version: 8
         distribution: 'temurin'
     # TODO: replace this with actions/download-artifact@v3
-    - run: wget https://public-assets-good-drivers-club.oss-cn-beijing.aliyuncs.com/geomesa-sql-dist_2.12-0.1.0-SNAPSHOT-bin.tar.gz
+    - run: wget https://public-assets-good-drivers-club.oss-cn-beijing.aliyuncs.com/geomesa-sql-dist_${{matrix.scala}}-0.1.0-SNAPSHOT-bin.tar.gz
     - name: Unpack the package
-      run: mkdir -p geomesa-sql-dist && tar xf geomesa-sql-dist_2.12-*-bin.tar.gz --strip-components=1 -C geomesa-sql-dist
-    - run: wget https://github.com/locationtech/geomesa/releases/download/geomesa-3.4.1/geomesa-cassandra_2.12-3.4.1-bin.tar.gz
-    - run: tar xf geomesa-cassandra_2.12-3.4.1-bin.tar.gz
+      run: mkdir -p geomesa-sql-dist && tar xf geomesa-sql-dist_${{matrix.scala}}-*-bin.tar.gz --strip-components=1 -C geomesa-sql-dist
+    - run: wget https://github.com/locationtech/geomesa/releases/download/geomesa-3.4.1/geomesa-cassandra_${{matrix.scala}}-${{matrix.geomesa}}-bin.tar.gz
+    - run: tar xf geomesa-cassandra_${{matrix.scala}}-${{matrix.geomesa}}-bin.tar.gz
     - name: Download cassandra
       run: wget "https://dlcdn.apache.org/cassandra/3.11.14/apache-cassandra-3.11.14-bin.tar.gz" && tar xf apache-cassandra-3.11.14-bin.tar.gz
     - name: Launch cassandra
@@ -198,7 +210,7 @@ jobs:
         done
     - run: |
         export CASSANDRA_HOME=$(pwd)/apache-cassandra-3.11.14
-        export GEOMESA_HOME=$(pwd)/geomesa-cassandra_2.12-3.4.1
+        export GEOMESA_HOME=$(pwd)/geomesa-cassandra_${{matrix.scala}}-${{matrix.geomesa}}
         export PATH=$CASSANDRA_HOME/bin:$GEOMESA_HOME/bin:$PATH
         yes | geomesa-cassandra
         cqlsh -e "CREATE KEYSPACE geomesa WITH REPLICATION = {'class': 'SimpleStrategy', 'replication_factor' : 1};"
