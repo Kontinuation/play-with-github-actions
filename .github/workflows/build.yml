@@ -90,7 +90,7 @@ jobs:
     - name: Unpack the package
       run: mkdir -p geomesa-sql-dist && tar xf geomesa-sql-dist_2.12-*-bin.tar.gz --strip-components=1 -C geomesa-sql-dist
     - name: Download hbase
-      run: wget "https://www.apache.org/dyn/closer.lua/hbase/2.5.1/hbase-2.5.1-bin.tar.gz" && tar xf hbase-2.5.1-bin.tar.gz
+      run: wget "https://dlcdn.apache.org/hbase/2.5.1/hbase-2.5.1-bin.tar.gz" && tar xf hbase-2.5.1-bin.tar.gz
     - run: wget https://github.com/locationtech/geomesa/releases/download/geomesa-3.4.1/geomesa-hbase_2.12-3.4.1-bin.tar.gz
     - run: tar xf geomesa-hbase_2.12-3.4.1-bin.tar.gz
     - name: Setup HBase and GeoMesa coprocessor
@@ -141,6 +141,32 @@ jobs:
         geomesa-redis ingest -u localhost:6379 -c geomesa:test -f beijing_subway build/smoke_test/beijing_subway.geojson --force
         geomesa-redis ingest -u localhost:6379 -c geomesa:test -f beijing_subway_station build/smoke_test/beijing_subway_station.geojson --force
         ./geomesa-sql-dist/bin/geomesa-sqlline -c geomesa:test -p "redis.url=localhost:6379" -f build/smoke_test/queries.sql
+
+  smoke-fs:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        repository: bxkftechteam/geomesa-sql # TODO: remove this config
+    - name: Set up JDK 8
+      uses: actions/setup-java@v3
+      with:
+        java-version: 8
+        distribution: 'temurin'
+    # TODO: replace this with actions/download-artifact@v3
+    - run: wget https://public-assets-good-drivers-club.oss-cn-beijing.aliyuncs.com/geomesa-sql-dist_2.12-0.1.0-SNAPSHOT-bin.tar.gz
+    - name: Unpack the package
+      run: mkdir -p geomesa-sql-dist && tar xf geomesa-sql-dist_2.12-*-bin.tar.gz --strip-components=1 -C geomesa-sql-dist
+    - run: wget https://github.com/locationtech/geomesa/releases/download/geomesa-3.4.1/geomesa-fs_2.12-3.4.1-bin.tar.gz
+    - run: tar xf geomesa-fs_2.12-3.4.1-bin.tar.gz
+    - run: |
+        export GEOMESA_HOME=$(pwd)/geomesa-fs_2.12-3.4.1
+        export PATH=$GEOMESA_HOME/bin:$PATH
+        yes | geomesa-fs
+        geomesa-fs ingest -p ./fs_store -e parquet --partition-scheme xz2-2bits -f beijing_subway build/smoke_test/beijing_subway.geojson --force
+        geomesa-fs ingest -p ./fs_store -e parquet --partition-scheme xz2-2bits -f beijing_subway_station build/smoke_test/beijing_subway_station.geojson --force
+        ./geomesa-sql-dist/bin/geomesa-sqlline -c ./fs_store -f build/smoke_test/queries.sql
 
   smoke-cassandra:
     runs-on: ubuntu-latest
