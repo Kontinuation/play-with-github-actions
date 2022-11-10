@@ -20,8 +20,8 @@ jobs:
     steps:
     - name: Allow password-less ssh to localhost
       run: |
-        if [ ! -f "$HOME/.ssh/id_rsa.pub" ] ;then
-          ssh-keygen -t rsa
+        if [ ! -f "$HOME/.ssh/id_rsa.pub" ]; then
+          ssh-keygen -q -t rsa -N '' -f ~/.ssh/id_rsa
         fi
         cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
     - uses: actions/checkout@v3
