@@ -45,10 +45,11 @@ jobs:
     - run: tar xf geomesa-cassandra_${{matrix.scala}}-${{matrix.geomesa}}-bin.tar.gz
     - name: Download cassandra
       run: wget "https://dlcdn.apache.org/cassandra/3.11.14/apache-cassandra-3.11.14-bin.tar.gz" && tar xf apache-cassandra-3.11.14-bin.tar.gz
-    - name: Setup tmate session
-      uses: mxschmitt/action-tmate@v3
+    # - name: Setup tmate session
+    #   uses: mxschmitt/action-tmate@v3
     - name: Launch cassandra
       run: |
+        sudo apt install python2
         ./apache-cassandra-3.11.14/bin/cassandra
         while ! ./apache-cassandra-3.11.14/bin/cqlsh -e 'describe cluster' ; do
           sleep 1
