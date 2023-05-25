@@ -18,10 +18,12 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env: 
+      TEST_VAR: ${{ secrets.GH_PKG_GITHUB_TOKEN }}
       GITHUB_TOKEN: ${{ secrets.GH_PKG_GITHUB_TOKEN }}
     steps:
     - name: Show debug information
       run: |
+        echo "$TEST_VAR"
         echo "$GITHUB_TOKEN"
-    # - name: Setup tmate session
-    #   uses: mxschmitt/action-tmate@v3
+    - name: Setup tmate session
+      uses: mxschmitt/action-tmate@v3
