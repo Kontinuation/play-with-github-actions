@@ -6,7 +6,7 @@
 # separate terms of service, privacy policy, and support
 # documentation.
 
-name: Smoke tests
+name: Play with GitHub Actions
 
 on:
   push:
@@ -17,49 +17,11 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env: 
+      GITHUB_TOKEN: ${{ secrets.GH_PKG_GITHUB_TOKEN }}
     steps:
-    - name: Dummy step
-      run: echo "dummy"
-
-  smoke-cassandra:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        scala: [2.12, 2.11]
-        geomesa: [3.4.1]
-    needs: build
-    steps:
-    - uses: actions/checkout@v3
-      with:
-        repository: bxkftechteam/geomesa-sql # TODO: remove this config
-    - name: Set up JDK 8
-      uses: actions/setup-java@v3
-      with:
-        java-version: 8
-        distribution: 'temurin'
-    # TODO: replace this with actions/download-artifact@v3
-    - run: wget https://public-assets-good-drivers-club.oss-cn-beijing.aliyuncs.com/geomesa-sql-dist_${{matrix.scala}}-0.1.0-SNAPSHOT-bin.tar.gz
-    - name: Unpack the package
-      run: mkdir -p geomesa-sql-dist && tar xf geomesa-sql-dist_${{matrix.scala}}-*-bin.tar.gz --strip-components=1 -C geomesa-sql-dist
-    - run: wget https://github.com/locationtech/geomesa/releases/download/geomesa-3.4.1/geomesa-cassandra_${{matrix.scala}}-${{matrix.geomesa}}-bin.tar.gz
-    - run: tar xf geomesa-cassandra_${{matrix.scala}}-${{matrix.geomesa}}-bin.tar.gz
-    - name: Download cassandra
-      run: wget "https://dlcdn.apache.org/cassandra/3.11.14/apache-cassandra-3.11.14-bin.tar.gz" && tar xf apache-cassandra-3.11.14-bin.tar.gz
+    - name: Show debug information
+      run: |
+        echo "$GITHUB_TOKEN"
     # - name: Setup tmate session
     #   uses: mxschmitt/action-tmate@v3
-    - name: Launch cassandra
-      run: |
-        sudo apt install python2
-        ./apache-cassandra-3.11.14/bin/cassandra
-        while ! ./apache-cassandra-3.11.14/bin/cqlsh -e 'describe cluster' ; do
-          sleep 1
-        done
-    - run: |
-        export CASSANDRA_HOME=$(pwd)/apache-cassandra-3.11.14
-        export GEOMESA_HOME=$(pwd)/geomesa-cassandra_${{matrix.scala}}-${{matrix.geomesa}}
-        export PATH=$CASSANDRA_HOME/bin:$GEOMESA_HOME/bin:$PATH
-        yes | geomesa-cassandra
-        cqlsh -e "CREATE KEYSPACE geomesa WITH REPLICATION = {'class': 'SimpleStrategy', 'replication_factor' : 1};"
-        geomesa-cassandra ingest -k geomesa -P localhost:9042 -c geomesa -f beijing_subway build/smoke_test/beijing_subway.geojson --force
-        geomesa-cassandra ingest -k geomesa -P localhost:9042 -c geomesa -f beijing_subway_station build/smoke_test/beijing_subway_station.geojson --force
-        ./geomesa-sql-dist/bin/geomesa-sqlline -c geomesa -p "cassandra.contact.point=localhost:9042;cassandra.keyspace=geomesa" -f build/smoke_test/queries.sql
