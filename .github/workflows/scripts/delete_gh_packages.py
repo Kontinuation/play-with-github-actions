@@ -54,7 +54,6 @@ def main():
     parser = argparse.ArgumentParser(description='Delete a GitHub package')
     parser.add_argument('--owner', type=str, required=False, help='GitHub owner')
     parser.add_argument('--repo', type=str, required=False, help='GitHub repo')
-    parser.add_argument('--owner-type', type=str, required=True, help='Type of owner, user or org')
     parser.add_argument('--package-type', type=str, required=True, help='Package type, could be maven or npm')
     parser.add_argument('--package', type=str, required=False, help='GitHub package name')
     parser.add_argument('--package-list', type=str, required=False, help='A file containing a list of packages to delete')
@@ -65,6 +64,7 @@ def main():
     owner = None
     repo = None
     token = None
+    owner_type = None
 
     if args.owner and args.repo:
         owner = args.owner
@@ -93,8 +93,17 @@ def main():
     else:
         print('Either --package or --package-list must be specified')
         exit(1)
+
+    url = f'https://api.github.com/users/{owner}'
+    response = requests.get(url, headers={'Authorization': f'Bearer {token}'})
+    if response.status_code != 200:
+        print(f'Cannot obtain owner info for {owner}. HTTP status code: {response.status_code}, response: {response.text}')
+        exit(1)
+    owner_type = 'org' if response.json()['type'] == 'Organization' else 'user'
+    print(f'Owner type of {owner} is {owner_type}')
+
     for package in packages:
-        delete_github_package(args.owner_type, owner, repo, args.package_type, package, args.version, token)
+        delete_github_package(owner_type, owner, repo, args.package_type, package, args.version, token)
 
 
 if __name__ == '__main__':
