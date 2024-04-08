@@ -34,13 +34,13 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python }}
+          python-version: '3.8'
 
       - name: Install python dependencies
         run: python3 -m pip install requests
 
       - name: Cache Maven packages
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
@@ -54,7 +54,7 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Delete existing release if exists
-        if: ${{ github.event.inputs.overwrite }}
+        if: ${{ github.event.inputs.overwrite != 'false' }}
         env:
           VERSION: ${{ steps.resolve-version.outputs.version }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -72,7 +72,7 @@ jobs:
           git push --delete origin $VERSION
 
       - name: Delete existing maven package
-        if: ${{ github.event.inputs.overwrite }}
+        if: ${{ github.event.inputs.overwrite != 'false' }}
         env:
           VERSION: ${{ steps.resolve-version.outputs.version }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
