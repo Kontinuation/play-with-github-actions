@@ -97,9 +97,6 @@ jobs:
           echo "Deleting package version $VERSION"
           python3 .github/workflows/scripts/delete_gh_packages.py --package-type maven --package-list package-list.txt --version $VERSION
 
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-
       - name: Build and publish jar
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
