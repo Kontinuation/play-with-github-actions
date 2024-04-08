@@ -12,7 +12,7 @@ on:
         required: true
         default: false
       prerelease:
-        description: 'Pre-release'
+        description: 'Set as a pre-release'
         required: true
         type: boolean
         default: false
@@ -51,6 +51,12 @@ jobs:
         run: |
           export VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
           echo "Project version number: $VERSION"
+          if [[ "$VERSION" == *"-SNAPSHOT" ]]; then
+            echo "The version $VERSION is a snapshot version and should not be released"
+            echo "::error title=SNAPSHOT version detected::The version $VERSION is a snapshot version and should not be released"
+            exit 1
+          fi
+
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "tag=v${VERSION}" >> "$GITHUB_OUTPUT"
 
@@ -90,6 +96,9 @@ jobs:
 
           echo "Deleting package version $VERSION"
           python3 .github/workflows/scripts/delete_gh_packages.py --package-type maven --package-list package-list.txt --version $VERSION
+
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
 
       - name: Build and publish jar
         env:
