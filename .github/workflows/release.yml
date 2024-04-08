@@ -67,14 +67,6 @@ jobs:
       - prepare
       - build-wheel
     steps:
-      - name: Download wheels
-        uses: actions/download-artifact@v3
-        with:
-          name: wheels
-
-      - name: Show files
-        run: find .
-
       - name: Checkout
         uses: actions/checkout@v4
       - name: Set up JDK
@@ -140,6 +132,15 @@ jobs:
         run: |
           mvn --batch-mode deploy -DskipTests
 
+      - name: Download wheels
+        uses: actions/download-artifact@v3
+        with:
+          name: wheels
+          path: wheels
+
+      - name: Show files
+        run: find .
+
       - name: Create tag
         env:
           VERSION: ${{ needs.prepare.outputs.version }}
@@ -159,4 +160,5 @@ jobs:
           generate_release_notes: true
           files: |
             target/*.jar
+            wheels/*
             LICENSE
