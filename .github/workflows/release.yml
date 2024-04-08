@@ -70,8 +70,8 @@ jobs:
           fi
 
           echo "Deleting tag $TAG"
-          git tag -d $TAG
-          git push --delete origin $TAG
+          git tag -d $TAG || true
+          git push --delete origin $TAG || true
 
       - name: Delete existing maven package
         if: ${{ github.event.inputs.overwrite != 'false' }}

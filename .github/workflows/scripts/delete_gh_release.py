@@ -15,8 +15,13 @@ def delete_github_release(repo, tag, token):
     url = f'https://api.github.com/repos/{repo}/releases/tags/{tag}'
     response = requests.get(url, headers=headers)
     if response.status_code != 200:
-        print(f'Cannot get releases of tag {tag} for {repo}. HTTP status code: {response.status_code}, response: {response.text}')
-        return
+        if response.status_code == 404:
+            print(f'Release with tag {tag} does not exist in repo {repo}')
+            return
+        else:
+            msg = f'Cannot get releases of tag {tag} for {repo}. HTTP status code: {response.status_code}, response: {response.text}'
+            print(msg)
+            raise RuntimeError(msg)
 
     release_info = response.json()
     release_id = release_info['id']
