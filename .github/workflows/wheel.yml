@@ -1,0 +1,22 @@
+name: Build Wheel
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_call:
+    
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Dummy build wheel
+      run: |
+        mkdir -p wheelhouse
+        echo "file1" > wheelhouse/file1.whl
+        echo "file2" > wheelhouse/file2.whl
+    - uses: actions/upload-artifact@v4
+      with:
+        path: ./wheelhouse/*.whl

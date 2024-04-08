@@ -18,6 +18,10 @@ on:
         default: false
 
 jobs:
+
+  build-wheel:
+    uses: Kontinuation/play-with-github-actions/.github/workflows/wheel.yml@main
+
   build:
     runs-on: ubuntu-latest
     permissions:
@@ -51,8 +55,10 @@ jobs:
         run: |
           export VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
           echo "Project version number: $VERSION"
+          if [ -z "$VERSION" ]; then
+            echo "::error title=Resolve version number failed::Failed to obtain version number of this maven project"
+          fi
           if [[ "$VERSION" == *"-SNAPSHOT" ]]; then
-            echo "The version $VERSION is a snapshot version and should not be released"
             echo "::error title=SNAPSHOT version detected::The version $VERSION is a snapshot version and should not be released"
             exit 1
           fi
