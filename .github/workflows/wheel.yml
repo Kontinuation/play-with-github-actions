@@ -17,6 +17,7 @@ jobs:
         mkdir -p wheelhouse
         echo "file1" > wheelhouse/file1.whl
         echo "file2" > wheelhouse/file2.whl
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v3
       with:
+        name: wheels
         path: ./wheelhouse/*.whl

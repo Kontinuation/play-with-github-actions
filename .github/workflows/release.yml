@@ -18,8 +18,44 @@ on:
         default: false
 
 jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '8'
+          distribution: 'zulu'
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: Resolve version number
+        id: resolve-version
+        run: |
+          export VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          echo "Project version number: $VERSION"
+          if [ -z "$VERSION" ]; then
+            echo "::error title=Resolve version number failed::Failed to obtain version number of this maven project"
+          fi
+          if [[ "$VERSION" == *"-SNAPSHOT" ]]; then
+            echo "::error title=SNAPSHOT version detected::The version $VERSION is a snapshot version and should not be released"
+            exit 1
+          fi
+
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v${VERSION}" >> "$GITHUB_OUTPUT"
+    outputs:
+      version: ${{ steps.resolve-version.outputs.version }}
+      tag: ${{ steps.resolve-version.outputs.tag }}
 
   build-wheel:
+    needs:
+      - prepare
     uses: Kontinuation/play-with-github-actions/.github/workflows/wheel.yml@main
 
   build:
@@ -27,7 +63,18 @@ jobs:
     permissions:
       contents: write
       packages: write
+    needs:
+      - prepare
+      - build-wheel
     steps:
+      - name: Download wheels
+        uses: actions/download-artifact@v3
+        with:
+          name: wheels
+
+      - name: Show files
+        run: find .
+
       - name: Checkout
         uses: actions/checkout@v4
       - name: Set up JDK
@@ -50,27 +97,11 @@ jobs:
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
 
-      - name: Resolve version number
-        id: resolve-version
-        run: |
-          export VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
-          echo "Project version number: $VERSION"
-          if [ -z "$VERSION" ]; then
-            echo "::error title=Resolve version number failed::Failed to obtain version number of this maven project"
-          fi
-          if [[ "$VERSION" == *"-SNAPSHOT" ]]; then
-            echo "::error title=SNAPSHOT version detected::The version $VERSION is a snapshot version and should not be released"
-            exit 1
-          fi
-
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "tag=v${VERSION}" >> "$GITHUB_OUTPUT"
-
       - name: Delete existing release if exists
         if: ${{ github.event.inputs.overwrite != 'false' }}
         env:
-          VERSION: ${{ steps.resolve-version.outputs.version }}
-          TAG: ${{ steps.resolve-version.outputs.tag }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+          TAG: ${{ needs.prepare.outputs.tag }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set +e
@@ -88,8 +119,8 @@ jobs:
       - name: Delete existing maven package
         if: ${{ github.event.inputs.overwrite != 'false' }}
         env:
-          VERSION: ${{ steps.resolve-version.outputs.version }}
-          TAG: ${{ steps.resolve-version.outputs.tag }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+          TAG: ${{ needs.prepare.outputs.tag }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           export GROUP_ID=$(mvn help:evaluate -Dexpression=project.groupId -q -DforceStdout)
@@ -111,8 +142,8 @@ jobs:
 
       - name: Create tag
         env:
-          VERSION: ${{ steps.resolve-version.outputs.version }}
-          TAG: ${{ steps.resolve-version.outputs.tag }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+          TAG: ${{ needs.prepare.outputs.tag }}
         run: |
           git tag $TAG
           git push origin $TAG
@@ -120,8 +151,8 @@ jobs:
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
-          name: ${{ github.event.inputs.name != '' && github.event.inputs.name || steps.resolve-version.outputs.tag }}
-          tag_name: ${{ steps.resolve-version.outputs.tag }}
+          name: ${{ github.event.inputs.name != '' && github.event.inputs.name || needs.prepare.outputs.tag }}
+          tag_name: ${{ needs.prepare.outputs.tag }}
           draft: false
           prerelease: ${{ github.event.inputs.prerelease }}
           fail_on_unmatched_files: true
