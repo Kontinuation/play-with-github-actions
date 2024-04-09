@@ -90,23 +90,12 @@ jobs:
           restore-keys: ${{ runner.os }}-m2
 
       - name: Delete existing release if exists
+        uses: dev-drprasad/delete-tag-and-release@v1.1
         if: ${{ github.event.inputs.overwrite != 'false' }}
-        env:
-          VERSION: ${{ needs.prepare.outputs.version }}
-          TAG: ${{ needs.prepare.outputs.tag }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set +e
-
-          echo "Deleting release $TAG"
-          python3 .github/workflows/scripts/delete_gh_release.py --tag $TAG
-          if [ $? -ne 0 ]; then
-            exit 1
-          fi
-
-          echo "Deleting tag $TAG"
-          git tag -d $TAG || true
-          git push --delete origin $TAG || true
+        with:
+          tag_name: ${{ needs.prepare.outputs.tag }}
+          delete_release: true
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Delete existing maven package
         if: ${{ github.event.inputs.overwrite != 'false' }}
@@ -137,9 +126,6 @@ jobs:
         with:
           name: wheels
           path: wheels
-
-      - name: Show files
-        run: find .
 
       - name: Create tag
         env:
